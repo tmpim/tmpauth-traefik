@@ -1,0 +1,7 @@
+displayName: Tmpauth
+type: middleware
+# iconPath: .assets/icon.png
+
+import: github.com/tmpim/tmpauth-traefik
+
+summary: 'Tmpauth Middleware'
