@@ -2352,34 +2352,44 @@ func validobject(data []byte, i int) (outi int, ok bool) {
 		case '}':
 			return i + 1, true
 		case '"':
-		key:
-			if i, ok = validstring(data, i+1); !ok {
-				return i, false
-			}
-			if i, ok = validcolon(data, i); !ok {
-				return i, false
-			}
-			if i, ok = validany(data, i); !ok {
-				return i, false
-			}
-			if i, ok = validcomma(data, i, '}'); !ok {
-				return i, false
-			}
-			if data[i] == '}' {
-				return i + 1, true
-			}
-			i++
-			for ; i < len(data); i++ {
-				switch data[i] {
-				default:
+			for {
+				if i, ok = validstring(data, i+1); !ok {
 					return i, false
-				case ' ', '\t', '\n', '\r':
-					continue
-				case '"':
-					goto key
 				}
+				if i, ok = validcolon(data, i); !ok {
+					return i, false
+				}
+				if i, ok = validany(data, i); !ok {
+					return i, false
+				}
+				if i, ok = validcomma(data, i, '}'); !ok {
+					return i, false
+				}
+				if data[i] == '}' {
+					return i + 1, true
+				}
+				i++
+				shouldContinue := false
+				for ; i < len(data); i++ {
+					switch data[i] {
+					default:
+						return i, false
+					case ' ', '\t', '\n', '\r':
+						break
+					case '"':
+						shouldContinue = true
+					}
+					if shouldContinue {
+						break
+					}
+				}
+
+				if shouldContinue {
+					continue
+				}
+
+				return i, false
 			}
-			return i, false
 		}
 	}
 	return i, false
