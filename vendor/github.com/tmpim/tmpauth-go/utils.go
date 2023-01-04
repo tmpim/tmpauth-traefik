@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/1lann/gjson"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/tidwall/gjson"
 )
 
 func (t *Tmpauth) DebugLog(fmtString string, args ...interface{}) {

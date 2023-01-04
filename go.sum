@@ -1,13 +1,11 @@
+github.com/1lann/gjson v0.0.0-20230104090358-3425df48385e h1:mnK3uIblvZCugqXauOd9fACkcrLSW2DuODHNAiiznaE=
+github.com/1lann/gjson v0.0.0-20230104090358-3425df48385e/go.mod h1:h4O3i89Ews67z7WFgZm/bRhJ10ykF5eJvsrIuzIJufw=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
-github.com/tidwall/gjson v1.14.4 h1:uo0p8EbA09J7RQaflQ1aBRffTR7xedD2bcIVSYxLnkM=
-github.com/tidwall/gjson v1.14.4/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
 github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
 github.com/tidwall/pretty v1.2.0/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
 github.com/tidwall/pretty v1.2.1 h1:qjsOFOWWQl+N3RsoF5/ssm1pHmJJwhjlSbZ51I6wMl4=
 github.com/tidwall/pretty v1.2.1/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
-github.com/tmpim/tmpauth-go v0.0.0-20230103074101-0c2e76b54ab7 h1:LN+51RXJmHqG8uWkC64YuTgfhqK/FME16kd+I8eAAUw=
-github.com/tmpim/tmpauth-go v0.0.0-20230103074101-0c2e76b54ab7/go.mod h1:kYG+X4yHYXIUnLYMwT4GJYLZv4zcrncf98DCtY5QmOA=
-github.com/tmpim/tmpauth-go v0.0.0-20230103074625-4ac8e796cc81 h1:ZORbQA+85kKED7MfywRq0FjQJbWL4TD0/VpCt5WMfv8=
-github.com/tmpim/tmpauth-go v0.0.0-20230103074625-4ac8e796cc81/go.mod h1:kYG+X4yHYXIUnLYMwT4GJYLZv4zcrncf98DCtY5QmOA=
+github.com/tmpim/tmpauth-go v0.0.0-20230104090649-f40112e5a3f6 h1:9KUuc23znjywPwxEFIj3vAwd1xBPY1SkvZQGkFTXkrs=
+github.com/tmpim/tmpauth-go v0.0.0-20230104090649-f40112e5a3f6/go.mod h1:shgd9Q0gaCtgBjVnQDwWXtsSVNa1dZgwXNI8tRHvtes=

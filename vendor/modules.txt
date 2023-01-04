@@ -1,15 +1,15 @@
+# github.com/1lann/gjson v0.0.0-20230104090358-3425df48385e
+## explicit; go 1.12
+github.com/1lann/gjson
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 ## explicit
 github.com/dgrijalva/jwt-go
-# github.com/tidwall/gjson v1.14.4
-## explicit; go 1.12
-github.com/tidwall/gjson
 # github.com/tidwall/match v1.1.1
 ## explicit; go 1.15
 github.com/tidwall/match
 # github.com/tidwall/pretty v1.2.1
 ## explicit; go 1.16
 github.com/tidwall/pretty
-# github.com/tmpim/tmpauth-go v0.0.0-20230103074625-4ac8e796cc81
+# github.com/tmpim/tmpauth-go v0.0.0-20230104090649-f40112e5a3f6
 ## explicit; go 1.19
 github.com/tmpim/tmpauth-go
