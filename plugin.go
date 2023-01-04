@@ -1,4 +1,4 @@
-package tmpauthplugin
+package tmpauth_traefik
 
 import (
 	"context"
