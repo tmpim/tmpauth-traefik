@@ -1795,13 +1795,16 @@ func parseSubSelectors(path string) (sels []subSelector, out string, ok bool) {
 			}
 		case '"':
 			i++
-		loop:
 			for ; i < len(path); i++ {
+				pleaseBreak := false
 				switch path[i] {
 				case '\\':
 					i++
 				case '"':
-					break loop
+					pleaseBreak = true
+				}
+				if pleaseBreak {
+					break
 				}
 			}
 		case '[', '(', '{':
