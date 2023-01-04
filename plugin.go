@@ -2,7 +2,6 @@ package tmpauth_traefik
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/tmpim/tmpauth-go"
@@ -16,16 +15,8 @@ func CreateConfig() *Config {
 	return new(Config)
 }
 
-type Tmpauth struct {
-	next http.Handler
-}
-
-// New created a new Tmpauth plugin.
+// New creates a new tmpauth plugin instance.
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
-	if len(config.Headers) == 0 {
-		return nil, fmt.Errorf("headers cannot be empty")
-	}
-
 	parsedCfg, err := config.Parse()
 	if err != nil {
 		return nil, err
