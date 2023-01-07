@@ -390,20 +390,20 @@ func (t *Tmpauth) authFromCookie(r *http.Request) (*CachedToken, error) {
 
 // Stdlib returns a http.Handler compatible version of the Tmpauth middleware.
 func (t *Tmpauth) Stdlib() *TmpauthStdlib {
-	return &TmpauthStdlib{Tmpauth: t}
+	return &TmpauthStdlib{tmpauth: t}
 }
 
 type TmpauthStdlib struct {
-	*Tmpauth
+	tmpauth *Tmpauth
 }
 
 func (t *TmpauthStdlib) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	code, err := t.Tmpauth.ServeHTTP(w, r)
+	code, err := t.tmpauth.ServeHTTP(w, r)
 	if err != nil {
 		if code == 0 {
 			code = http.StatusInternalServerError
 		}
 		w.WriteHeader(code)
-		t.DebugLog("tmpauth error: %+v", err)
+		t.tmpauth.DebugLog("tmpauth error: %+v", err)
 	}
 }
