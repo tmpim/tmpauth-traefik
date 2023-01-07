@@ -136,7 +136,6 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 
 			u.Path = r.URL.Path
 			u.RawQuery = r.URL.RawQuery
-			r.URL.Host = t.miniServerHost
 
 			req, err := http.NewRequest(r.Method, u.String(), r.Body)
 			if err != nil {

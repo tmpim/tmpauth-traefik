@@ -37,6 +37,10 @@ func NewMini(config *MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	miniServerHost := config.MiniServerHost
 	config.MiniServerHost = ""
 
+	if miniServerHost == "" {
+		return nil, fmt.Errorf("miniServerHost is empty and must be set")
+	}
+
 	tmpauthConfig, err := json.Marshal(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal config: %w", err)
