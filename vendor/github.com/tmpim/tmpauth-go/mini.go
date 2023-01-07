@@ -12,7 +12,7 @@ import (
 
 type MiniConfig struct {
 	PublicKey             string                   `json:"publicKey"`
-	Token                 string                   `json:"secret"`
+	Secret                string                   `json:"secret"`
 	AllowedUsers          []string                 `json:"allowedUsers"`
 	IDFormats             []string                 `json:"idFormats"`
 	Except                []string                 `json:"except"`
@@ -87,7 +87,7 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 		Config: &Config{
 			Secret:                remoteConfig.Secret,
 			ClientID:              remoteConfig.ClientID,
-			Token:                 config.Token,
+			Token:                 config.Secret,
 			AllowedUsers:          config.AllowedUsers,
 			IDFormats:             config.IDFormats,
 			Except:                config.Except,

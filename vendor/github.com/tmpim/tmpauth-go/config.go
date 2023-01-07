@@ -39,7 +39,7 @@ type Config struct {
 // and validating them into a Config.
 type UnserializableConfig struct {
 	PublicKey             string                   `json:"publicKey"`
-	Token                 string                   `json:"secret"`
+	Secret                string                   `json:"secret"`
 	AllowedUsers          []string                 `json:"allowedUsers"`
 	IDFormats             []string                 `json:"idFormats"`
 	Except                []string                 `json:"except"`
@@ -74,7 +74,7 @@ func (c *configClaims) Valid() error {
 }
 
 func (c *UnserializableConfig) Parse() (*Config, error) {
-	if len(c.PublicKey) == 0 || len(c.Token) == 0 {
+	if len(c.PublicKey) == 0 || len(c.Secret) == 0 {
 		return nil, fmt.Errorf("tmpauth: both public_key and secret must be specified")
 	}
 
@@ -94,7 +94,7 @@ func (c *UnserializableConfig) Parse() (*Config, error) {
 		Y:     y,
 	}
 
-	token, err := jwt.ParseWithClaims(c.Token, &configClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(c.Secret, &configClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("tmpauth: invalid secret signing method: %v", token.Header["alg"])
 		}
@@ -138,7 +138,7 @@ func (c *UnserializableConfig) Parse() (*Config, error) {
 	return &Config{
 		PublicKey:             pubKey,
 		ClientID:              claims.Subject,
-		Token:                 c.Token,
+		Token:                 c.Secret,
 		Secret:                []byte(claims.Secret),
 		Redirect:              c.Redirect,
 		Include:               c.Include,
