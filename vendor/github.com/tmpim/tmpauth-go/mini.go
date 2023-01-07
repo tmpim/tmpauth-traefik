@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
-	"github.com/cockroachdb/errors"
 )
 
 type MiniConfig struct {
@@ -39,13 +37,9 @@ func NewMini(config *MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	miniServerHost := config.MiniServerHost
 	config.MiniServerHost = ""
 
-	if miniServerHost == "" {
-		return nil, errors.New("miniServerHost is empty and must be set")
-	}
-
 	tmpauthConfig, err := json.Marshal(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal config")
+		return nil, fmt.Errorf("failed to marshal config: %w", err)
 	}
 
 	for i := 0; i < 5; i++ {

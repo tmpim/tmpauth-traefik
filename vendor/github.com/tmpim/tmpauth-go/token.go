@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -80,7 +80,7 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 	if t.miniServerHost != "" {
 		req, err := http.NewRequest(http.MethodPost, t.miniServerHost+"/parse-wrapped-auth-jwt", strings.NewReader(tokenStr))
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid mini server request")
+			return nil, fmt.Errorf("invalid mini server request: %w", err)
 		}
 
 		req.Header.Set(ConfigIDHeader, t.miniConfigID)
@@ -88,7 +88,7 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 
 		resp, err := t.miniClient.Do(req)
 		if err != nil {
-			return nil, errors.Wrap(err, "ParseWrappedAuthJWT on mini server")
+			return nil, fmt.Errorf("ParseWrappedAuthJWT on mini server: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -98,7 +98,7 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 
 		err = json.NewDecoder(resp.Body).Decode(&cachedToken)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid response from mini server")
+			return nil, fmt.Errorf("invalid response from mini server: %w", err)
 		}
 
 		cachedToken.headersMutex = new(sync.RWMutex)

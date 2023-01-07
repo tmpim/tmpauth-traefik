@@ -2,6 +2,7 @@ package tmpauth
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -131,7 +131,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 		if t.miniServerHost != "" {
 			u, err := url.Parse(t.miniServerHost)
 			if err != nil {
-				return http.StatusInternalServerError, errors.Wrap(err, "parse mini server host")
+				return http.StatusInternalServerError, fmt.Errorf("parse mini server host: %w", err)
 			}
 
 			u.Path = r.URL.Path
@@ -275,7 +275,7 @@ func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error)
 	if t.miniServerHost != "" {
 		req, err := http.NewRequest(http.MethodGet, t.miniServerHost+"/start-auth", nil)
 		if err != nil {
-			return http.StatusInternalServerError, errors.Wrap(err, "invalid mini server request")
+			return http.StatusInternalServerError, fmt.Errorf("invalid mini server request: %w", err)
 		}
 
 		req.Header.Set(ConfigIDHeader, t.miniConfigID)
@@ -285,7 +285,7 @@ func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error)
 
 		resp, err := t.miniClient.Do(req)
 		if err != nil {
-			return http.StatusInternalServerError, errors.Wrap(err, "StartAuth on mini server")
+			return http.StatusInternalServerError, fmt.Errorf("StartAuth on mini server: %w", err)
 		}
 		defer resp.Body.Close()
 
