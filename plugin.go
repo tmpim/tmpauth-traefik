@@ -47,7 +47,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 				continue
 			}
 
-			ta, err := tmpauth.NewMini(config, tmpauth.FromHTTPHandler(next))
+			ta, err := tmpauth.NewMini(*config, tmpauth.FromHTTPHandler(next))
 			if err != nil {
 				log.Printf("failed to initialize tmpauth mini for %q: %v", config.Host, err)
 				time.Sleep(10 * time.Second)

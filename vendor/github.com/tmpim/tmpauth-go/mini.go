@@ -31,7 +31,7 @@ type RemoteConfig struct {
 	Secret   []byte
 }
 
-func NewMini(config *MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
+func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	var lastErr error
 	var remoteConfig RemoteConfig
 	miniServerHost := config.MiniServerHost
