@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/tmpim/tmpauth-go"
@@ -19,11 +19,14 @@ func CreateConfig() *Config {
 }
 
 type AlwaysOnHandler struct {
-	handler atomic.Pointer[tmpauth.TmpauthStdlib]
+	handler *tmpauth.TmpauthStdlib
+	mu      sync.Mutex
 }
 
 func (a *AlwaysOnHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler := a.handler.Load()
+	a.mu.Lock()
+	handler := a.handler
+	a.mu.Unlock()
 	if handler == nil {
 		http.Error(w, "tmpauth not initialized", http.StatusInternalServerError)
 		return
@@ -51,7 +54,7 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 				continue
 			}
 
-			handler.handler.Store(ta.Stdlib())
+			handler.handler = ta.Stdlib()
 
 			break
 		}
