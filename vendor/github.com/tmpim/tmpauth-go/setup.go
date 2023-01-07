@@ -52,6 +52,10 @@ type Tmpauth struct {
 	hmacMutex       sync.Mutex
 	janitorOnce     sync.Once
 
+	miniServerHost string
+	miniConfigID   string
+	miniClient     *http.Client
+
 	done     chan struct{}
 	doneOnce sync.Once
 }

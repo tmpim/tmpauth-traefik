@@ -131,6 +131,10 @@ func (c *UnserializableConfig) Parse() (*Config, error) {
 		u.Path = strings.TrimSuffix(u.Path, "/")
 	}
 
+	if u == nil {
+		u = &url.URL{}
+	}
+
 	return &Config{
 		PublicKey:             pubKey,
 		ClientID:              claims.Subject,

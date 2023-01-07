@@ -25,8 +25,9 @@ type BackgroundWorker struct {
 	mutex             *sync.RWMutex
 	minValidationTime time.Time
 
-	debug  bool
-	logger *log.Logger
+	debug          bool
+	logger         *log.Logger
+	validationHost string
 }
 
 func (w *BackgroundWorker) DebugLog(fmtString string, args ...interface{}) {
@@ -37,11 +38,14 @@ func (w *BackgroundWorker) DebugLog(fmtString string, args ...interface{}) {
 	w.logger.Output(2, fmt.Sprintf(fmtString, args...))
 }
 
-func (w *BackgroundWorker) Start(logger *log.Logger, debug bool) {
+func (w *BackgroundWorker) Start(logger *log.Logger, debug bool, validationHost ...string) {
 	w.once.Do(func() {
 		w.DebugLog("background worker started")
 		w.debug = debug
 		w.logger = logger
+		if len(validationHost) > 0 {
+			w.validationHost = validationHost[0]
+		}
 		go w.run()
 	})
 }
@@ -51,6 +55,10 @@ func (w *BackgroundWorker) MinValidationTime() time.Time {
 	ret := w.minValidationTime
 	w.mutex.RUnlock()
 	return ret
+}
+
+func MinValidationTime() time.Time {
+	return backgroundWorker.MinValidationTime()
 }
 
 func (w *BackgroundWorker) run() {
@@ -71,7 +79,12 @@ func (w *BackgroundWorker) updateMinimumIat() {
 	}()
 	w.DebugLog("updating minimum IAT")
 
-	resp, err := http.Get("https://" + TmpAuthHost + "/tmpauth/cache")
+	validationHost := w.validationHost
+	if validationHost == "" {
+		validationHost = "https://" + TmpAuthHost
+	}
+
+	resp, err := http.Get(validationHost + "/tmpauth/cache")
 	if err != nil {
 		w.DebugLog("failed to get /tmpauth/cache: %v", err)
 		return

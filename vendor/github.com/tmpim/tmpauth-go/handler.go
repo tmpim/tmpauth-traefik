@@ -2,14 +2,15 @@ package tmpauth
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -127,6 +128,43 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 	statusRequested := false
 
 	if t.Matches(r.URL.Path, "/.well-known/tmpauth/") {
+		if t.miniServerHost != "" {
+			u, err := url.Parse(t.miniServerHost)
+			if err != nil {
+				return http.StatusInternalServerError, errors.Wrap(err, "parse mini server host")
+			}
+
+			u.Path = r.URL.Path
+			u.RawQuery = r.URL.RawQuery
+			r.URL.Host = t.miniServerHost
+
+			req, err := http.NewRequest(r.Method, u.String(), r.Body)
+			if err != nil {
+				return http.StatusInternalServerError, err
+			}
+
+			req.Header = r.Header
+			req.Header.Set(ConfigIDHeader, t.miniConfigID)
+
+			t.DebugLog("proxying request to mini server: %s", u.String())
+
+			resp, err := t.miniClient.Do(req)
+			if err != nil {
+				return http.StatusInternalServerError, err
+			}
+			defer resp.Body.Close()
+
+			for k, v := range resp.Header {
+				w.Header()[k] = v
+			}
+
+			w.WriteHeader(resp.StatusCode)
+
+			_, err = io.Copy(w, resp.Body)
+
+			return 0, err
+		}
+
 		switch strings.TrimPrefix(r.URL.Path, "/.well-known/tmpauth/") {
 		case "callback":
 			return t.authCallback(w, r)
@@ -193,7 +231,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 		}
 
 		if authRequired {
-			return t.startAuth(w, r)
+			return t.StartAuth(w, r)
 		}
 	} else if len(t.Config.Headers) > 0 {
 		err := t.SetHeaders(cachedToken, r.Header)
@@ -233,13 +271,52 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 	return t.Next(w, r)
 }
 
-func (t *Tmpauth) startAuth(w http.ResponseWriter, r *http.Request) (int, error) {
+func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error) {
+	if t.miniServerHost != "" {
+		req, err := http.NewRequest(http.MethodGet, t.miniServerHost+"/start-auth", nil)
+		if err != nil {
+			return http.StatusInternalServerError, errors.Wrap(err, "invalid mini server request")
+		}
+
+		req.Header.Set(ConfigIDHeader, t.miniConfigID)
+		req.Header.Set(RequestURIHeader, r.RequestURI)
+		req.Header.Set(HostHeader, r.Host)
+		req.Header.Set("Content-Type", "application/jwt")
+
+		resp, err := t.miniClient.Do(req)
+		if err != nil {
+			return http.StatusInternalServerError, errors.Wrap(err, "StartAuth on mini server")
+		}
+		defer resp.Body.Close()
+
+		for k, v := range resp.Header {
+			w.Header()[k] = v
+		}
+
+		w.WriteHeader(resp.StatusCode)
+
+		_, err = io.Copy(w, resp.Body)
+
+		return 0, err
+	}
+
 	now := time.Now()
 	expiry := time.Now().Add(5 * time.Minute)
 	tokenID := generateTokenID()
 
+	host := t.Config.Host
+
+	if host.Host == "" {
+		var err error
+		host, err = url.Parse("https://" + r.Header.Get("Host"))
+		if err != nil {
+			t.DebugLog("could not determine host: %v", err)
+			return http.StatusInternalServerError, errors.New("tmpauth: could not determine host")
+		}
+	}
+
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, &stateClaims{
-		CallbackURL: "https://" + t.Config.Host.Host + t.Config.Host.Path + "/.well-known/tmpauth/callback",
+		CallbackURL: "https://" + host.Host + host.Path + "/.well-known/tmpauth/callback",
 		StandardClaims: jwt.StandardClaims{
 			Id:        tokenID,
 			Issuer:    TmpAuthHost + ":server:" + t.Config.ClientID,
@@ -322,5 +399,12 @@ type TmpauthStdlib struct {
 }
 
 func (t *TmpauthStdlib) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.ServeHTTP(w, r)
+	code, err := t.Tmpauth.ServeHTTP(w, r)
+	if err != nil {
+		if code == 0 {
+			code = http.StatusInternalServerError
+		}
+		w.WriteHeader(code)
+		t.DebugLog("tmpauth error: %+v", err)
+	}
 }

@@ -8,9 +8,11 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -44,10 +46,19 @@ func (w *wrappedToken) Valid() error {
 	return nil
 }
 
-func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string, doNotCache ...bool) (*CachedToken, error) {
+const ConfigIDHeader = "X-Tmpauth-Config-Id"
+const RequestURIHeader = "X-Tmpauth-Request-URI"
+const HostHeader = "X-Tmpauth-Host"
+
+func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 	t.janitorOnce.Do(func() {
 		go t.janitor()
-		backgroundWorker.Start(t.Config.Logger, t.Config.Debug)
+
+		if t.miniServerHost != "" {
+			backgroundWorker.Start(t.Config.Logger, t.Config.Debug, t.miniServerHost)
+		} else {
+			backgroundWorker.Start(t.Config.Logger, t.Config.Debug)
+		}
 	})
 
 	t.DebugLog("parsing wrapped auth JWT")
@@ -66,6 +77,39 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string, doNotCache ...bool) (*Cac
 		return cachedToken, nil
 	}
 
+	if t.miniServerHost != "" {
+		req, err := http.NewRequest(http.MethodPost, t.miniServerHost+"/parse-wrapped-auth-jwt", strings.NewReader(tokenStr))
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid mini server request")
+		}
+
+		req.Header.Set(ConfigIDHeader, t.miniConfigID)
+		req.Header.Set("Content-Type", "application/jwt")
+
+		resp, err := t.miniClient.Do(req)
+		if err != nil {
+			return nil, errors.Wrap(err, "ParseWrappedAuthJWT on mini server")
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("tmpauth: mini server returned %v", resp.StatusCode)
+		}
+
+		err = json.NewDecoder(resp.Body).Decode(&cachedToken)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid response from mini server")
+		}
+
+		cachedToken.headersMutex = new(sync.RWMutex)
+
+		t.tokenCacheMutex.Lock()
+		t.TokenCache[tokenID] = cachedToken
+		t.tokenCacheMutex.Unlock()
+
+		return cachedToken, nil
+	}
+
 	// slow path, token is verified
 	wTokenRaw, err := jwt.ParseWithClaims(tokenStr, &wrappedToken{
 		clientID: t.Config.ClientID,
@@ -81,16 +125,18 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string, doNotCache ...bool) (*Cac
 		return nil, err
 	}
 
-	if len(doNotCache) == 0 {
-		t.tokenCacheMutex.Lock()
-		t.TokenCache[tokenID] = cachedToken
-		t.tokenCacheMutex.Unlock()
-	}
+	t.tokenCacheMutex.Lock()
+	t.TokenCache[tokenID] = cachedToken
+	t.tokenCacheMutex.Unlock()
 
 	return cachedToken, nil
 }
 
 func (t *Tmpauth) ParseAuthJWT(tokenStr string, minValidationTime time.Time) (*CachedToken, error) {
+	if t.miniServerHost != "" {
+		return nil, errors.New("tmpauth: mini server endpoint is set, cannot parse auth JWTs")
+	}
+
 	t.DebugLog("parsing auth JWT: " + tokenStr)
 
 	token, err := jwt.Parse(tokenStr, t.VerifyWithPublicKey)
@@ -208,24 +254,37 @@ type userDescriptor struct {
 func (t *Tmpauth) SetHeaders(token *CachedToken, headers http.Header) error {
 	var headersToCache [][2]string
 
-	token.headersMutex.RLock()
-	for headerName, headerOption := range t.Config.Headers {
-		if val, found := token.CachedHeaders[headerOption.Format]; found {
-			headers.Set(headerName, val)
-		} else {
-			value, err := headerOption.Evaluate(token.UserDescriptor)
-			if err != nil {
-				t.DebugLog("failed to evaluate header option for header %q with format %q on claim: %v",
-					headerName, headerOption.Format, token.UserDescriptor)
+	err := func() error {
+		token.headersMutex.RLock()
+		defer token.headersMutex.RUnlock()
+		for headerName, headerOption := range t.Config.Headers {
+			if val, found := token.CachedHeaders[headerOption.Format]; found {
+				headers.Set(headerName, val)
+			} else {
+				if t.miniServerHost != "" {
+					return errors.New("tmpauth: cannot set headers when using mini server " +
+						"endpoint, mini server has a bad implementation")
+				}
 
-				return fmt.Errorf("tmpauth: failed to evaluate required user claims field, turn on debugging for more details")
+				value, err := headerOption.Evaluate(token.UserDescriptor)
+				if err != nil {
+					t.DebugLog("failed to evaluate header option for header %q with format %q on claim: %v",
+						headerName, headerOption.Format, token.UserDescriptor)
+
+					return fmt.Errorf("tmpauth: failed to evaluate required user claims field, " +
+						"turn on debugging for more details")
+				}
+
+				headers.Set(headerName, value)
+				headersToCache = append(headersToCache, [2]string{headerOption.Format, value})
 			}
-
-			headers.Set(headerName, value)
-			headersToCache = append(headersToCache, [2]string{headerOption.Format, value})
 		}
+
+		return nil
+	}()
+	if err != nil {
+		return err
 	}
-	token.headersMutex.RUnlock()
 
 	if len(headersToCache) > 0 {
 		token.headersMutex.Lock()
