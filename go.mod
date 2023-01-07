@@ -2,7 +2,7 @@ module github.com/tmpim/tmpauth-traefik
 
 go 1.19
 
-require github.com/tmpim/tmpauth-go v0.0.0-20230107212740-2b2ee6b75d30
+require github.com/tmpim/tmpauth-go v0.0.0-20230107213055-edb27c5846be
 
 require (
 	github.com/1lann/gjson v0.0.0-20230104092549-cea68e957c09 // indirect

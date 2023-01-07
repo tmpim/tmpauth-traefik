@@ -30,12 +30,12 @@ type BackgroundWorker struct {
 	validationHost string
 }
 
-func (w *BackgroundWorker) DebugLog(fmtString string, args ...interface{}) {
+func (w *BackgroundWorker) DebugLog(str string) {
 	if !w.debug {
 		return
 	}
 
-	w.logger.Output(2, fmt.Sprintf(fmtString, args...))
+	w.logger.Output(2, str)
 }
 
 func (w *BackgroundWorker) Start(logger *log.Logger, debug bool, validationHost ...string) {
@@ -86,14 +86,14 @@ func (w *BackgroundWorker) updateMinimumIat() {
 
 	resp, err := http.Get(validationHost + "/tmpauth/cache")
 	if err != nil {
-		w.DebugLog("failed to get /tmpauth/cache: %v", err)
+		w.DebugLog(fmt.Sprintf("failed to get /tmpauth/cache: %v", err))
 		return
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		w.DebugLog("failed to get/tmpauth/cache: response not OK: %v", resp.Status)
+		w.DebugLog(fmt.Sprintf("failed to get/tmpauth/cache: response not OK: %v", resp.Status))
 		return
 	}
 
@@ -102,7 +102,7 @@ func (w *BackgroundWorker) updateMinimumIat() {
 	}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		w.DebugLog("failed to parse /tmpauth/cache response: %v", err)
+		w.DebugLog(fmt.Sprintf("failed to parse /tmpauth/cache response: %v", err))
 		return
 	}
 
@@ -119,8 +119,8 @@ func (w *BackgroundWorker) updateMinimumIat() {
 	w.mutex.Unlock()
 
 	if !prevMinIat.IsZero() {
-		w.DebugLog("new minimum IAT (%v) before previous new minimum IAT (%v), ignoring update", newMinIat, prevMinIat)
+		w.DebugLog(fmt.Sprintf("new minimum IAT (%v) before previous new minimum IAT (%v), ignoring update", newMinIat, prevMinIat))
 	} else {
-		w.DebugLog("minimum IAT successfully updated to %v (%v)", response.CacheMinIat, newMinIat)
+		w.DebugLog(fmt.Sprintf("minimum IAT successfully updated to %v (%v)", response.CacheMinIat, newMinIat))
 	}
 }
