@@ -8,12 +8,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func (t *Tmpauth) DebugLog(fmtString string, args ...interface{}) {
+func (t *Tmpauth) DebugLog(str string) {
 	if !t.Config.Debug {
 		return
 	}
 
-	t.Config.Logger.Output(2, fmt.Sprintf(fmtString, args...))
+	t.Config.Logger.Output(2, str)
 }
 
 func getJSONPath(jsonData, path string) string {

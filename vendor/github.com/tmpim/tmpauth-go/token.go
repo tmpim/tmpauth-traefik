@@ -137,7 +137,7 @@ func (t *Tmpauth) ParseAuthJWT(tokenStr string, minValidationTime time.Time) (*C
 		return nil, errors.New("tmpauth: mini server endpoint is set, cannot parse auth JWTs")
 	}
 
-	t.DebugLog("parsing auth JWT: " + tokenStr)
+	t.DebugLog(fmt.Sprintf("parsing auth JWT: " + tokenStr))
 
 	token, err := jwt.Parse(tokenStr, t.VerifyWithPublicKey)
 	if err != nil {
@@ -235,7 +235,7 @@ func (t *Tmpauth) ParseAuthJWT(tokenStr string, minValidationTime time.Time) (*C
 	}
 
 	if len(t.Config.IDFormats) > 0 {
-		t.DebugLog("user descriptor: %v", cachedToken.UserDescriptor)
+		t.DebugLog(fmt.Sprintf("user descriptor: %v", cachedToken.UserDescriptor))
 	}
 
 	for _, idFormat := range t.Config.IDFormats {
@@ -268,8 +268,8 @@ func (t *Tmpauth) SetHeaders(token *CachedToken, headers http.Header) error {
 
 				value, err := headerOption.Evaluate(token.UserDescriptor)
 				if err != nil {
-					t.DebugLog("failed to evaluate header option for header %q with format %q on claim: %v",
-						headerName, headerOption.Format, token.UserDescriptor)
+					t.DebugLog(fmt.Sprintf("failed to evaluate header option for header %q with format %q on claim: %v",
+						headerName, headerOption.Format, token.UserDescriptor))
 
 					return fmt.Errorf("tmpauth: failed to evaluate required user claims field, " +
 						"turn on debugging for more details")

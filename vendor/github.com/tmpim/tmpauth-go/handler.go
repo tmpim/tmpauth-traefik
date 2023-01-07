@@ -145,7 +145,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 			req.Header = r.Header
 			req.Header.Set(ConfigIDHeader, t.miniConfigID)
 
-			t.DebugLog("proxying request to mini server: %s", u.String())
+			t.DebugLog(fmt.Sprintf("proxying request to mini server: %s", u.String()))
 
 			resp, err := t.miniClient.Do(req)
 			if err != nil {
@@ -201,15 +201,15 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 			}
 		}
 	} else {
-		t.DebugLog("url path is suspicious, authentication being mandated: %v != %v",
-			path.Clean(r.URL.Path), r.URL.Path)
+		t.DebugLog(fmt.Sprintf("url path is suspicious, authentication being mandated: %v != %v",
+			path.Clean(r.URL.Path), r.URL.Path))
 	}
 
-	t.DebugLog("auth requirement for %q: %v", r.URL.Path, authRequired)
+	t.DebugLog(fmt.Sprintf("auth requirement for %q: %v", r.URL.Path, authRequired))
 
 	cachedToken, err := t.authFromCookie(r)
 	if err != nil {
-		t.DebugLog("failed to get JWT token: %v", err)
+		t.DebugLog(fmt.Sprintf("failed to get JWT token: %v", err))
 
 		if _, err := r.Cookie(t.CookieName()); err != http.ErrNoCookie {
 			t.DebugLog("cookie exists and deemed to be invalid, requesting client to delete cookie")
@@ -235,7 +235,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 	} else if len(t.Config.Headers) > 0 {
 		err := t.SetHeaders(cachedToken, r.Header)
 		if err != nil {
-			t.DebugLog("failed to set headers: %v", err)
+			t.DebugLog(fmt.Sprintf("failed to set headers: %v", err))
 			return http.StatusPreconditionRequired, fmt.Errorf("tmpauth: missing required header value")
 		}
 	}
@@ -246,7 +246,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 
 	userAuthorized := false
 	if len(t.Config.AllowedUsers) > 0 {
-		t.DebugLog("checking if user is allowed on allowed users list: %v", cachedToken.UserIDs)
+		t.DebugLog(fmt.Sprintf("checking if user is allowed on allowed users list: %v", cachedToken.UserIDs))
 		userIDs := make(map[string]bool)
 		for _, userID := range cachedToken.UserIDs {
 			userIDs[userID] = true
@@ -309,7 +309,7 @@ func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error)
 		var err error
 		host, err = url.Parse("https://" + r.Header.Get("Host"))
 		if err != nil {
-			t.DebugLog("could not determine host: %v", err)
+			t.DebugLog(fmt.Sprintf("could not determine host: %v", err))
 			return http.StatusInternalServerError, errors.New("tmpauth: could not determine host")
 		}
 	}
@@ -326,7 +326,7 @@ func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error)
 		},
 	}).SignedString(t.Config.Secret)
 	if err != nil {
-		t.DebugLog("failed to sign state token: %v", err)
+		t.DebugLog(fmt.Sprintf("failed to sign state token: %v", err))
 		return http.StatusInternalServerError, errors.New("tmpauth: failed to start authentication")
 	}
 
@@ -404,6 +404,6 @@ func (t *TmpauthStdlib) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			code = http.StatusInternalServerError
 		}
 		w.WriteHeader(code)
-		t.tmpauth.DebugLog("tmpauth error: %+v", err)
+		t.tmpauth.DebugLog(fmt.Sprintf("tmpauth error: %+v", err))
 	}
 }

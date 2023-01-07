@@ -60,7 +60,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 		clientID: t.Config.ClientID,
 	}, t.VerifyWithSecret)
 	if err != nil {
-		t.DebugLog("failed to verify state token: %v", err)
+		t.DebugLog(fmt.Sprintf("failed to verify state token: %v", err))
 		return t.failRedirect(w, r, ErrInvalidCallbackToken)
 	}
 
@@ -68,7 +68,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 
 	redirectURI, err := t.consumeStateID(r, w, claims.Id)
 	if err != nil {
-		t.DebugLog("failed to verify state ID against session: %v", err)
+		t.DebugLog(fmt.Sprintf("failed to verify state ID against session: %v", err))
 		return t.failRedirect(w, r, ErrInvalidCallbackToken)
 	}
 
@@ -81,12 +81,12 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 
 	token, err := t.ParseAuthJWT(tokenStr, backgroundWorker.MinValidationTime())
 	if err != nil {
-		t.DebugLog("failed to verify callback token: %v", err)
+		t.DebugLog(fmt.Sprintf("failed to verify callback token: %v", err))
 		return t.failRedirect(w, r, ErrInvalidCallbackToken)
 	}
 
 	if token.StateID != claims.Id {
-		t.DebugLog("failed to verify state ID: token(%v) != state(%v)", token.StateID, claims.Id)
+		t.DebugLog(fmt.Sprintf("failed to verify state ID: token(%v) != state(%v)", token.StateID, claims.Id))
 		return t.failRedirect(w, r, ErrInvalidCallbackToken)
 	}
 
@@ -105,7 +105,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 		},
 	}).SignedString(t.Config.Secret)
 	if err != nil {
-		t.DebugLog("failed to sign wrapped token: %v", err)
+		t.DebugLog(fmt.Sprintf("failed to sign wrapped token: %v", err))
 		return http.StatusInternalServerError, fmt.Errorf("tmpauth: failed to sign wrapped token")
 	}
 
@@ -158,7 +158,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 }
 
 func (t *Tmpauth) consumeStateID(r *http.Request, w http.ResponseWriter, stateID string) (string, error) {
-	t.DebugLog("consuming state ID: %v", stateID)
+	t.DebugLog(fmt.Sprintf("consuming state ID: %v", stateID))
 
 	defer func() {
 		for _, cookie := range r.Cookies() {
