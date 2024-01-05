@@ -118,10 +118,10 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 		doneOnce: sync.Once{},
 	}
 
-	transport := &MiniTransport{
+	transport := (http.RoundTripper)(&MiniTransport{
 		RoundTripper: http.DefaultTransport,
 		tmpauth:      t,
-	}
+	})
 
 	t.miniClient = &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
