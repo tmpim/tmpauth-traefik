@@ -155,12 +155,16 @@ type MiniTransport struct {
 }
 
 func (t *MiniTransport) Do(req *http.Request, depth int) (*http.Response, error) {
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil, fmt.Errorf("mini transport read body: %w", err)
-	}
+	var body []byte
+	if req.Body != nil {
+		var err error
+		body, err = io.ReadAll(req.Body)
+		if err != nil {
+			return nil, fmt.Errorf("mini transport read body: %w", err)
+		}
 
-	req.Body = io.NopCloser(bytes.NewReader(body))
+		req.Body = io.NopCloser(bytes.NewReader(body))
+	}
 
 	resp, err := t.base.RoundTrip(req)
 	if resp.StatusCode == http.StatusPreconditionFailed {
@@ -170,7 +174,9 @@ func (t *MiniTransport) Do(req *http.Request, depth int) (*http.Response, error)
 			return nil, fmt.Errorf("tmpauth: mini server reauth failed %w", err)
 		}
 
-		req.Body = io.NopCloser(bytes.NewReader(body))
+		if body != nil {
+			req.Body = io.NopCloser(bytes.NewReader(body))
+		}
 		return t.Do(req, depth+1)
 	}
 
