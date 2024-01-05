@@ -42,7 +42,8 @@ type TransportWorkaround struct {
 }
 
 func (t TransportWorkaround) RoundTrip(req *http.Request) (*http.Response, error) {
-	return transportRegistry[t.configID](req)
+	f := transportRegistry[t.configID]
+	return f(req)
 }
 
 func DoTransportWorkaround(a interface{}) http.RoundTripper {
@@ -142,6 +143,7 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	transportRegistry[remoteConfig.ConfigID] = transport.RoundTrip
 
 	workaround := TransportWorkaround{configID: remoteConfig.ConfigID}
+	fmt.Println("workaround:", workaround)
 	transportWorkaround := DoTransportWorkaround(workaround)
 
 	t.miniClient = &http.Client{
