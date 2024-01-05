@@ -147,7 +147,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 
 			t.DebugLog(fmt.Sprintf("proxying request to mini server: %s", u.String()))
 
-			resp, err := t.miniClient(req)
+			resp, err := t.miniClient(req, 0)
 			if err != nil {
 				return http.StatusInternalServerError, err
 			}
@@ -282,7 +282,7 @@ func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error)
 		req.Header.Set(HostHeader, r.Host)
 		req.Header.Set("Content-Type", "application/jwt")
 
-		resp, err := t.miniClient(req)
+		resp, err := t.miniClient(req, 0)
 		if err != nil {
 			return http.StatusInternalServerError, fmt.Errorf("StartAuth on mini server: %w", err)
 		}
@@ -400,7 +400,7 @@ func (t *Tmpauth) Whomst() (map[string]json.RawMessage, error) {
 
 		req.Header.Set(ConfigIDHeader, t.miniConfigID)
 
-		resp, respErr = t.miniClient(req)
+		resp, respErr = t.miniClient(req, 0)
 	} else {
 		resp, respErr = t.HttpClient.Get("https://" + TmpAuthHost + "/whomst")
 	}

@@ -55,7 +55,7 @@ type Tmpauth struct {
 	miniServerHost string
 	miniConfigID   string
 	miniConfigJSON []byte
-	miniClient     func(req *http.Request) (*http.Response, error)
+	miniClient     func(req *http.Request, depth int) (*http.Response, error)
 
 	done     chan struct{}
 	doneOnce sync.Once
