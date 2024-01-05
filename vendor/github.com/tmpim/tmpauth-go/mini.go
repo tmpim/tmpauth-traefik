@@ -46,6 +46,7 @@ func (t TransportWorkaround) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 func DoTransportWorkaround(a interface{}) http.RoundTripper {
+	fmt.Println(a) // don't ask why this is required
 	return a.(http.RoundTripper)
 }
 
