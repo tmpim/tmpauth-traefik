@@ -144,13 +144,13 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 
 	workaround := TransportWorkaround{configID: remoteConfig.ConfigID}
 	log.Println("workaround:", workaround)
-	transportWorkaround := DoTransportWorkaround(workaround)
+	// transportWorkaround := DoTransportWorkaround(workaround)
 
 	t.miniClient = &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: transportWorkaround,
+		Transport: workaround,
 	}
 
 	return t, nil
