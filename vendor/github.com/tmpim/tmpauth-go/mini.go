@@ -118,14 +118,16 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 		doneOnce: sync.Once{},
 	}
 
+	transport := &MiniTransport{
+		base:    http.DefaultTransport,
+		tmpauth: t,
+	}
+
 	t.miniClient = &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: &MiniTransport{
-			base:    http.DefaultTransport,
-			tmpauth: t,
-		},
+		Transport: transport,
 	}
 
 	return t, nil
