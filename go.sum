@@ -11,5 +11,5 @@ github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JT
 github.com/tidwall/pretty v1.2.0/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
 github.com/tidwall/pretty v1.2.1 h1:qjsOFOWWQl+N3RsoF5/ssm1pHmJJwhjlSbZ51I6wMl4=
 github.com/tidwall/pretty v1.2.1/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
-github.com/tmpim/tmpauth-go v0.0.0-20240105213017-7208bca04a5a h1:LO2AsV3TKLgCmBiS//q5v7RYPKHb6iTc/0vffSMsQW8=
-github.com/tmpim/tmpauth-go v0.0.0-20240105213017-7208bca04a5a/go.mod h1:orxqOFri1nToPDyi5ot+8pN9B8V00rpmsVVtBKuBPbY=
+github.com/tmpim/tmpauth-go v0.0.0-20240105214550-1167684b220f h1:LgiXzXSScoPWycoOcveCBSMkY6xfcf27SWYSLtCnu1g=
+github.com/tmpim/tmpauth-go v0.0.0-20240105214550-1167684b220f/go.mod h1:orxqOFri1nToPDyi5ot+8pN9B8V00rpmsVVtBKuBPbY=
