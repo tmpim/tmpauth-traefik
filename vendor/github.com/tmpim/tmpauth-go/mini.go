@@ -47,7 +47,7 @@ func (t TransportWorkaround) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 func DoTransportWorkaround(a interface{}) http.RoundTripper {
-	fmt.Println(a) // don't ask why this is required
+	log.Println("workaround 2:", a) // don't ask why this is required
 	return a.(http.RoundTripper)
 }
 
@@ -143,7 +143,7 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	transportRegistry[remoteConfig.ConfigID] = transport.RoundTrip
 
 	workaround := TransportWorkaround{configID: remoteConfig.ConfigID}
-	fmt.Println("workaround:", workaround)
+	log.Println("workaround:", workaround)
 	transportWorkaround := DoTransportWorkaround(workaround)
 
 	t.miniClient = &http.Client{
