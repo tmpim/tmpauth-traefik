@@ -4,12 +4,19 @@ github.com/1lann/gjson
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 ## explicit
 github.com/dgrijalva/jwt-go
+# github.com/gofrs/uuid v4.4.0+incompatible
+## explicit
+github.com/gofrs/uuid
+# github.com/iancoleman/orderedmap v0.3.0
+## explicit; go 1.16
+github.com/iancoleman/orderedmap
 # github.com/tidwall/match v1.1.1
 ## explicit; go 1.15
 github.com/tidwall/match
 # github.com/tidwall/pretty v1.2.1
 ## explicit; go 1.16
 github.com/tidwall/pretty
-# github.com/tmpim/tmpauth-go v0.0.0-20230107213055-edb27c5846be
+# github.com/tmpim/tmpauth-go v0.0.0-20240105194909-413c7337cac4
 ## explicit; go 1.19
 github.com/tmpim/tmpauth-go
+github.com/tmpim/tmpauth-go/microtoken

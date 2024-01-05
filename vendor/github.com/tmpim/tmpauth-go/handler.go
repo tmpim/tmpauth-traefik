@@ -388,6 +388,41 @@ func (t *Tmpauth) authFromCookie(r *http.Request) (*CachedToken, error) {
 	return t.ParseWrappedAuthJWT(cookie.Value)
 }
 
+func (t *Tmpauth) Whomst() (map[string]json.RawMessage, error) {
+	var resp *http.Response
+	var respErr error
+
+	if t.miniServerHost != "" {
+		req, err := http.NewRequest(http.MethodGet, t.miniServerHost+"/tmpauth/whomst", nil)
+		if err != nil {
+			return nil, fmt.Errorf("invalid mini server request: %w", err)
+		}
+
+		req.Header.Set(ConfigIDHeader, t.miniConfigID)
+
+		resp, respErr = t.miniClient.Do(req)
+	} else {
+		resp, respErr = t.HttpClient.Get("https://" + TmpAuthHost + "/whomst")
+	}
+	if respErr != nil {
+		return nil, respErr
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("tmpauth: status code %d", resp.StatusCode)
+	}
+
+	var whomst map[string]json.RawMessage
+	err := json.NewDecoder(resp.Body).Decode(&whomst)
+	if err != nil {
+		return nil, err
+	}
+
+	return whomst, nil
+}
+
 // Stdlib returns a http.Handler compatible version of the Tmpauth middleware.
 func (t *Tmpauth) Stdlib() *TmpauthStdlib {
 	return &TmpauthStdlib{tmpauth: t}

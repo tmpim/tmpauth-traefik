@@ -54,6 +54,7 @@ type Tmpauth struct {
 
 	miniServerHost string
 	miniConfigID   string
+	miniConfigJSON []byte
 	miniClient     *http.Client
 
 	done     chan struct{}

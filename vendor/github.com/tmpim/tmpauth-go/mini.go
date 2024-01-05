@@ -2,8 +2,11 @@ package tmpauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"sync"
@@ -82,7 +85,7 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 
 	log.Println("registered mini client with config ID:", remoteConfig.ConfigID)
 
-	return &Tmpauth{
+	t := &Tmpauth{
 		Next: next,
 		Config: &Config{
 			Secret:                remoteConfig.Secret,
@@ -109,13 +112,93 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 
 		miniServerHost: miniServerHost,
 		miniConfigID:   remoteConfig.ConfigID,
-		miniClient: &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-		},
+		miniConfigJSON: tmpauthConfig,
 
 		done:     make(chan struct{}),
 		doneOnce: sync.Once{},
-	}, nil
+	}
+
+	t.miniClient = &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Transport: &MiniTransport{
+			base:    http.DefaultTransport,
+			tmpauth: t,
+		},
+	}
+
+	return t, nil
+}
+
+func (t *Tmpauth) ReauthMini() error {
+	log.Println("reauthenticating with mini...")
+
+	req, err := http.NewRequest(http.MethodPut, t.miniServerHost+"/config",
+		bytes.NewReader(t.miniConfigJSON))
+	if err != nil {
+		return fmt.Errorf("reauth create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("reauth error: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+type MiniTransport struct {
+	base    http.RoundTripper
+	tmpauth *Tmpauth
+}
+
+type roundTripDepthKey struct{}
+
+func (t *MiniTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	depthRaw := req.Context().Value(roundTripDepthKey{})
+	var depth *int
+	if depthRaw != nil {
+		depth = depthRaw.(*int)
+	}
+
+	if depth != nil && *depth > 10 {
+		return nil, errors.New("mini transport reached maximum reauth depth")
+	}
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil, fmt.Errorf("mini transport read body: %w", err)
+	}
+
+	req.Body = io.NopCloser(bytes.NewReader(body))
+
+	resp, err := t.base.RoundTrip(req)
+	if resp.StatusCode == http.StatusPreconditionFailed {
+		// our config ID is wrong
+		err := t.tmpauth.ReauthMini()
+		if err != nil {
+			return nil, fmt.Errorf("tmpauth: mini server reauth failed %w", err)
+		}
+
+		ctx := req.Context()
+
+		if depth != nil {
+			*depth++
+		} else {
+			one := 1
+			ctx = context.WithValue(ctx, roundTripDepthKey{}, &one)
+		}
+
+		req.Body = io.NopCloser(bytes.NewReader(body))
+		return t.RoundTrip(req.WithContext(ctx))
+	}
+
+	return resp, err
 }
