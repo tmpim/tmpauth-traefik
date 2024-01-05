@@ -119,15 +119,15 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	}
 
 	transport := &MiniTransport{
-		RoundTripper: http.DefaultTransport,
-		tmpauth:      t,
+		base:    http.DefaultTransport,
+		tmpauth: t,
 	}
 
 	t.miniClient = &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: PromiseRoundTripper{transport.RoundTrip},
+		Transport: MakeRoundTripper(transport),
 	}
 
 	return t, nil
@@ -156,16 +156,12 @@ func (t *Tmpauth) ReauthMini() error {
 	return nil
 }
 
-type PromiseRoundTripper struct {
-	roundTrip func(*http.Request) (*http.Response, error)
-}
-
-func (p PromiseRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	return p.RoundTrip(req)
+func MakeRoundTripper(v interface{}) http.RoundTripper {
+	return v.(http.RoundTripper)
 }
 
 type MiniTransport struct {
-	http.RoundTripper
+	base    http.RoundTripper
 	tmpauth *Tmpauth
 }
 
@@ -189,7 +185,7 @@ func (t *MiniTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	req.Body = io.NopCloser(bytes.NewReader(body))
 
-	resp, err := t.RoundTripper.RoundTrip(req)
+	resp, err := t.base.RoundTrip(req)
 	if resp.StatusCode == http.StatusPreconditionFailed {
 		// our config ID is wrong
 		err := t.tmpauth.ReauthMini()
