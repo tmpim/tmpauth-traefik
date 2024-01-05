@@ -45,6 +45,10 @@ func (t TransportWorkaround) RoundTrip(req *http.Request) (*http.Response, error
 	return transportRegistry[t.configID](req)
 }
 
+func DoTransportWorkaround(a interface{}) http.RoundTripper {
+	return a.(http.RoundTripper)
+}
+
 func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	var lastErr error
 	var remoteConfig RemoteConfig
@@ -140,7 +144,7 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: TransportWorkaround{configID: remoteConfig.ConfigID},
+		Transport: DoTransportWorkaround(TransportWorkaround{configID: remoteConfig.ConfigID}),
 	}
 
 	return t, nil
