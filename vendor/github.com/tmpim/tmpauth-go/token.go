@@ -107,7 +107,7 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 		req.Header.Set(ConfigIDHeader, t.miniConfigID)
 		req.Header.Set("Content-Type", "application/jwt")
 
-		resp, err := t.miniClient.Do(req)
+		resp, err := t.miniClient(req)
 		if err != nil {
 			return nil, fmt.Errorf("ParseWrappedAuthJWT on mini server: %w", err)
 		}
