@@ -34,6 +34,17 @@ type RemoteConfig struct {
 	Secret   []byte
 }
 
+// the registry and TransportWorkaround are used to work around a bug in yaegi.
+var transportRegistry = make(map[string]func(req *http.Request) (*http.Response, error))
+
+type TransportWorkaround struct {
+	configID string
+}
+
+func (t TransportWorkaround) RoundTrip(req *http.Request) (*http.Response, error) {
+	return transportRegistry[t.configID](req)
+}
+
 func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	var lastErr error
 	var remoteConfig RemoteConfig
@@ -123,11 +134,13 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 		tmpauth: t,
 	}
 
+	transportRegistry[remoteConfig.ConfigID] = transport.RoundTrip
+
 	t.miniClient = &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: MakeRoundTripper(transport),
+		Transport: TransportWorkaround{configID: remoteConfig.ConfigID},
 	}
 
 	return t, nil
@@ -154,10 +167,6 @@ func (t *Tmpauth) ReauthMini() error {
 	}
 
 	return nil
-}
-
-func MakeRoundTripper(v interface{}) http.RoundTripper {
-	return v.(http.RoundTripper)
 }
 
 type MiniTransport struct {
