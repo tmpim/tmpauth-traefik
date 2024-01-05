@@ -118,16 +118,16 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 		doneOnce: sync.Once{},
 	}
 
-	transport := (http.RoundTripper)(&MiniTransport{
+	transport := &MiniTransport{
 		RoundTripper: http.DefaultTransport,
 		tmpauth:      t,
-	})
+	}
 
 	t.miniClient = &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
-		Transport: transport,
+		Transport: PromiseRoundTripper{transport.RoundTrip},
 	}
 
 	return t, nil
@@ -154,6 +154,14 @@ func (t *Tmpauth) ReauthMini() error {
 	}
 
 	return nil
+}
+
+type PromiseRoundTripper struct {
+	roundTrip func(*http.Request) (*http.Response, error)
+}
+
+func (p PromiseRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return p.RoundTrip(req)
 }
 
 type MiniTransport struct {
