@@ -119,8 +119,8 @@ func NewMini(config MiniConfig, next CaddyHandleFunc) (*Tmpauth, error) {
 	}
 
 	transport := &MiniTransport{
-		base:    http.DefaultTransport,
-		tmpauth: t,
+		RoundTripper: http.DefaultTransport,
+		tmpauth:      t,
 	}
 
 	t.miniClient = &http.Client{
@@ -157,7 +157,7 @@ func (t *Tmpauth) ReauthMini() error {
 }
 
 type MiniTransport struct {
-	base    http.RoundTripper
+	http.RoundTripper
 	tmpauth *Tmpauth
 }
 
@@ -181,7 +181,7 @@ func (t *MiniTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	req.Body = io.NopCloser(bytes.NewReader(body))
 
-	resp, err := t.base.RoundTrip(req)
+	resp, err := t.RoundTripper.RoundTrip(req)
 	if resp.StatusCode == http.StatusPreconditionFailed {
 		// our config ID is wrong
 		err := t.tmpauth.ReauthMini()
