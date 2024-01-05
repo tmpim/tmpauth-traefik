@@ -159,10 +159,14 @@ type MiniTransport struct {
 type roundTripDepthKey struct{}
 
 func (t *MiniTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	depthRaw := req.Context().Value(roundTripDepthKey{})
 	var depth *int
-	if depthRaw != nil {
-		depth = depthRaw.(*int)
+
+	ctx := req.Context()
+	if ctx != nil {
+		depthRaw := ctx.Value(roundTripDepthKey{})
+		if depthRaw != nil {
+			depth = depthRaw.(*int)
+		}
 	}
 
 	if depth != nil && *depth > 10 {
@@ -183,8 +187,6 @@ func (t *MiniTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			return nil, fmt.Errorf("tmpauth: mini server reauth failed %w", err)
 		}
-
-		ctx := req.Context()
 
 		if depth != nil {
 			*depth++
