@@ -433,12 +433,12 @@ func (t *Tmpauth) Whomst(token *CachedToken) (map[string]json.RawMessage, error)
 			return nil, fmt.Errorf("invalid mini server request: %w", err)
 		}
 
-		req.Header.Set(TokenHeader, token.RawToken)
+		req.Header.Set(TokenHeader, token.InnerToken)
 
 		resp, respErr = t.miniClient(req, 0)
 	} else {
 		resp, respErr = t.HttpClient.Get("https://" + TmpAuthHost + "/whomst/tmpauth/db?token=" +
-			url.QueryEscape(token.RawToken))
+			url.QueryEscape(token.InnerToken))
 	}
 	if respErr != nil {
 		return nil, respErr

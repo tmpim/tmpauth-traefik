@@ -29,7 +29,8 @@ type CachedToken struct {
 	ValidatedAt    time.Time
 	IssuedAt       time.Time
 	UserIDs        []string // IDs that can be used in Config.AllowedUsers from IDFormats
-	RawToken       string
+	WrappedToken   string
+	InnerToken     string
 	headersMutex   *sync.RWMutex
 }
 
@@ -258,7 +259,8 @@ func (t *Tmpauth) ParseAuthJWT(tokenStr string, wrappedToken string, minValidati
 		IssuedAt:       iat,
 		StateID:        stateID,
 		ValidatedAt:    minValidationTime,
-		RawToken:       wrappedToken,
+		WrappedToken:   wrappedToken,
+		InnerToken:     tokenStr,
 		headersMutex:   new(sync.RWMutex),
 	}
 
@@ -302,7 +304,7 @@ func (t *Tmpauth) SetHeaders(token *CachedToken, headers http.Header) error {
 					}
 
 					req.Header.Set(ConfigIDHeader, t.miniConfigID)
-					req.Header.Set(TokenHeader, token.RawToken)
+					req.Header.Set(TokenHeader, token.WrappedToken)
 
 					req.Header.Set("Content-Type", "application/jwt")
 					resp, err := t.miniClient(req, 0)

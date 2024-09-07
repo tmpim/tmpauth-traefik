@@ -16,7 +16,7 @@ github.com/tidwall/match
 # github.com/tidwall/pretty v1.2.1
 ## explicit; go 1.16
 github.com/tidwall/pretty
-# github.com/tmpim/tmpauth-go v0.0.0-20240907041533-69c891e0b1cc
+# github.com/tmpim/tmpauth-go v0.0.0-20240907042817-094313240ed0
 ## explicit; go 1.19
 github.com/tmpim/tmpauth-go
 github.com/tmpim/tmpauth-go/microtoken

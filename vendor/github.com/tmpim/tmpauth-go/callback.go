@@ -111,7 +111,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 
 	// token validated, can cache now
 	tokenID := sha256.Sum256([]byte(wToken))
-	token.RawToken = wToken
+	token.WrappedToken = wToken
 	t.tokenCacheMutex.Lock()
 	t.TokenCache[tokenID] = token
 	t.tokenCacheMutex.Unlock()
