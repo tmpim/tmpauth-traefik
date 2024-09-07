@@ -61,7 +61,7 @@ type StatusResponse struct {
 	UserDescriptor json.RawMessage `json:"loggedInUser,omitempty"`
 }
 
-func (t *Tmpauth) serveStatus(w http.ResponseWriter, r *http.Request, token *CachedToken) (int, error) {
+func (t *Tmpauth) serveStatus(w http.ResponseWriter, token *CachedToken) (int, error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
@@ -126,6 +126,7 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 	}
 
 	statusRequested := false
+	whomstRequested := false
 
 	if t.Matches(r.URL.Path, "/.well-known/tmpauth/") {
 		if t.miniServerHost != "" {
@@ -169,6 +170,9 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 			return t.authCallback(w, r)
 		case "status":
 			statusRequested = true
+			break
+		case "whomst":
+			whomstRequested = true
 			break
 		default:
 			return http.StatusBadRequest, fmt.Errorf("tmpauth: no such path")
@@ -225,10 +229,14 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 			})
 		}
 
+		// Not authed, return an empty status or whomst response if requested
 		if statusRequested {
-			return t.serveStatus(w, r, nil)
+			return t.serveStatus(w, nil)
+		} else if whomstRequested {
+			return t.serveWhomst(w, nil)
 		}
 
+		// Begin auth flow
 		if authRequired {
 			return t.StartAuth(w, r)
 		}
@@ -240,8 +248,9 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 		}
 	}
 
+	// Token is available (authenticated, but not necessarily allowed), serve the status response if requested
 	if statusRequested {
-		return t.serveStatus(w, r, cachedToken)
+		return t.serveStatus(w, cachedToken)
 	}
 
 	userAuthorized := false
@@ -265,6 +274,11 @@ func (t *Tmpauth) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error)
 	if !userAuthorized {
 		t.DebugLog("user not on allowed users list")
 		return http.StatusForbidden, fmt.Errorf("tmpauth: user not in allowed list")
+	}
+
+	// Now serve the whomst response if requested (authenticated and authorized)
+	if whomstRequested {
+		return t.serveWhomst(w, cachedToken)
 	}
 
 	return t.Next(w, r)
@@ -374,6 +388,8 @@ func (t *Tmpauth) StartAuth(w http.ResponseWriter, r *http.Request) (int, error)
 	return 0, nil
 }
 
+// authFromCookie attempts to get the auth token from the cookie or the X-Tmpauth-Token header, and returns the
+// cachedToken (if it was successfully parsed), and any error.
 func (t *Tmpauth) authFromCookie(r *http.Request) (*CachedToken, error) {
 	token := r.Header.Get("X-Tmpauth-Token")
 	if token != "" {
@@ -388,7 +404,26 @@ func (t *Tmpauth) authFromCookie(r *http.Request) (*CachedToken, error) {
 	return t.ParseWrappedAuthJWT(cookie.Value)
 }
 
-func (t *Tmpauth) Whomst() (map[string]json.RawMessage, error) {
+// serveWhomst returns the entire whomst database if the user is logged in.
+func (t *Tmpauth) serveWhomst(w http.ResponseWriter, token *CachedToken) (int, error) {
+	// If the user is not logged in, return an error
+	if token == nil {
+		return http.StatusUnauthorized, fmt.Errorf("tmpauth: must be logged in to retrieve whomst database")
+	}
+
+	whomstData, err := t.Whomst(token)
+	if err != nil {
+		return http.StatusInternalServerError, fmt.Errorf("tmpauth: failed to retrieve whomst data: %w", err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(whomstData)
+
+	return 0, nil
+}
+
+func (t *Tmpauth) Whomst(token *CachedToken) (map[string]json.RawMessage, error) {
 	var resp *http.Response
 	var respErr error
 
@@ -398,11 +433,12 @@ func (t *Tmpauth) Whomst() (map[string]json.RawMessage, error) {
 			return nil, fmt.Errorf("invalid mini server request: %w", err)
 		}
 
-		req.Header.Set(ConfigIDHeader, t.miniConfigID)
+		req.Header.Set(TokenHeader, token.RawToken)
 
 		resp, respErr = t.miniClient(req, 0)
 	} else {
-		resp, respErr = t.HttpClient.Get("https://" + TmpAuthHost + "/whomst")
+		resp, respErr = t.HttpClient.Get("https://" + TmpAuthHost + "/whomst/tmpauth/db?token=" +
+			url.QueryEscape(token.RawToken))
 	}
 	if respErr != nil {
 		return nil, respErr

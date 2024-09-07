@@ -1,12 +1,14 @@
 package tmpauth
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -27,6 +29,7 @@ type CachedToken struct {
 	ValidatedAt    time.Time
 	IssuedAt       time.Time
 	UserIDs        []string // IDs that can be used in Config.AllowedUsers from IDFormats
+	RawToken       string
 	headersMutex   *sync.RWMutex
 }
 
@@ -48,9 +51,12 @@ func (w *wrappedToken) Valid() error {
 	return nil
 }
 
-const ConfigIDHeader = "X-Tmpauth-Config-Id"
-const RequestURIHeader = "X-Tmpauth-Request-URI"
-const HostHeader = "X-Tmpauth-Host"
+const (
+	ConfigIDHeader   = "X-Tmpauth-Config-Id"
+	RequestURIHeader = "X-Tmpauth-Request-URI"
+	HostHeader       = "X-Tmpauth-Host"
+	TokenHeader      = "X-Tmpauth-Token"
+)
 
 func (t *Tmpauth) ParseWrappedMicrotoken(tokenStr string) (*CachedToken, error) {
 	codec := &microtoken.Codec{
@@ -252,6 +258,7 @@ func (t *Tmpauth) ParseAuthJWT(tokenStr string, minValidationTime time.Time) (*C
 		IssuedAt:       iat,
 		StateID:        stateID,
 		ValidatedAt:    minValidationTime,
+		RawToken:       tokenStr,
 		headersMutex:   new(sync.RWMutex),
 	}
 
@@ -283,8 +290,38 @@ func (t *Tmpauth) SetHeaders(token *CachedToken, headers http.Header) error {
 				headers.Set(headerName, val)
 			} else {
 				if t.miniServerHost != "" {
-					return errors.New("tmpauth: cannot set headers when using mini server " +
-						"endpoint, mini server has a bad implementation")
+					headerConfig, err := json.Marshal(headerOption)
+					if err != nil {
+						return fmt.Errorf("tmpauth: failed to marshal header option: %w", err)
+					}
+
+					req, err := http.NewRequest(http.MethodGet, t.miniServerHost+"/header-evaluate",
+						bytes.NewReader(headerConfig))
+					if err != nil {
+						return fmt.Errorf("tmpauth: invalid mini server request: %w", err)
+					}
+
+					req.Header.Set(ConfigIDHeader, t.miniConfigID)
+					req.Header.Set(TokenHeader, token.RawToken)
+
+					req.Header.Set("Content-Type", "application/jwt")
+					resp, err := t.miniClient(req, 0)
+					if err != nil {
+						return fmt.Errorf("tmpauth: mini request failed: %w", err)
+					}
+
+					body, err := io.ReadAll(resp.Body)
+					if err != nil {
+						return fmt.Errorf("tmpauth: read all failed: %w", err)
+					}
+
+					if resp.StatusCode != http.StatusOK {
+						return fmt.Errorf("tmpauth: mini server returned %v: %v", resp.Status, string(body))
+					}
+
+					headers.Set(headerName, string(body))
+					headersToCache = append(headersToCache, [2]string{headerOption.Format, string(body)})
+					return nil
 				}
 
 				value, err := headerOption.Evaluate(token.UserDescriptor)
