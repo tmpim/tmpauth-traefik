@@ -147,7 +147,7 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 
 	wToken := wTokenRaw.Claims.(*wrappedToken)
 
-	cachedToken, err = t.ParseAuthJWT(wToken.Token, minValidationTime)
+	cachedToken, err = t.ParseAuthJWT(wToken.Token, tokenStr, minValidationTime)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (t *Tmpauth) ParseWrappedAuthJWT(tokenStr string) (*CachedToken, error) {
 	return cachedToken, nil
 }
 
-func (t *Tmpauth) ParseAuthJWT(tokenStr string, minValidationTime time.Time) (*CachedToken, error) {
+func (t *Tmpauth) ParseAuthJWT(tokenStr string, wrappedToken string, minValidationTime time.Time) (*CachedToken, error) {
 	if t.miniServerHost != "" {
 		return nil, errors.New("tmpauth: mini server endpoint is set, cannot parse auth JWTs")
 	}
@@ -258,7 +258,7 @@ func (t *Tmpauth) ParseAuthJWT(tokenStr string, minValidationTime time.Time) (*C
 		IssuedAt:       iat,
 		StateID:        stateID,
 		ValidatedAt:    minValidationTime,
-		RawToken:       tokenStr,
+		RawToken:       wrappedToken,
 		headersMutex:   new(sync.RWMutex),
 	}
 

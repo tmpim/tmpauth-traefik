@@ -79,7 +79,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 		})
 	}
 
-	token, err := t.ParseAuthJWT(tokenStr, backgroundWorker.MinValidationTime())
+	token, err := t.ParseAuthJWT(tokenStr, "", backgroundWorker.MinValidationTime())
 	if err != nil {
 		t.DebugLog(fmt.Sprintf("failed to verify callback token: %v", err))
 		return t.failRedirect(w, r, ErrInvalidCallbackToken)
@@ -111,6 +111,7 @@ func (t *Tmpauth) authCallback(w http.ResponseWriter, r *http.Request) (int, err
 
 	// token validated, can cache now
 	tokenID := sha256.Sum256([]byte(wToken))
+	token.RawToken = wToken
 	t.tokenCacheMutex.Lock()
 	t.TokenCache[tokenID] = token
 	t.tokenCacheMutex.Unlock()
