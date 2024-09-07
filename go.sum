@@ -17,3 +17,5 @@ github.com/tmpim/tmpauth-go v0.0.0-20240804213258-7010df908dee h1:CsUTxB1h3yP5Lr
 github.com/tmpim/tmpauth-go v0.0.0-20240804213258-7010df908dee/go.mod h1:orxqOFri1nToPDyi5ot+8pN9B8V00rpmsVVtBKuBPbY=
 github.com/tmpim/tmpauth-go v0.0.0-20240804215142-bb1e0aff5110 h1:YVqTbsJm9UYJwMKVHIRCvRB/o9rLirFZW2VdNk2JYJs=
 github.com/tmpim/tmpauth-go v0.0.0-20240804215142-bb1e0aff5110/go.mod h1:orxqOFri1nToPDyi5ot+8pN9B8V00rpmsVVtBKuBPbY=
+github.com/tmpim/tmpauth-go v0.0.0-20240907034751-efa68f55be2e h1:4F0VtEds70hjqu2f5qgp9jyaTRzjESphw2EBBaD3PwQ=
+github.com/tmpim/tmpauth-go v0.0.0-20240907034751-efa68f55be2e/go.mod h1:orxqOFri1nToPDyi5ot+8pN9B8V00rpmsVVtBKuBPbY=
